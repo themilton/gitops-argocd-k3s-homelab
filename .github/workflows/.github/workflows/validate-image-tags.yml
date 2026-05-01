@@ -1,0 +1,19 @@
+name: Validate Image Tags
+on:
+  pull_request:
+    paths:
+      - 'overlays/**/kustomization.yaml'
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract image tags
+        run: |
+          grep "newTag:" overlays/*/kustomization.yaml | while read line; do
+            TAG=$(echo "$line" | awk '{print $2}')
+            IMAGE=$(grep -B1 "newTag: $TAG" overlays/*/kustomization.yaml | grep "newName:" | awk '{print $2}')
+            echo "Checking $IMAGE:$TAG"
+            docker manifest inspect "$IMAGE:$TAG" > /dev/null 2>&1 || \
+              (echo "ERROR: $IMAGE:$TAG does not exist" && exit 1)
+          done

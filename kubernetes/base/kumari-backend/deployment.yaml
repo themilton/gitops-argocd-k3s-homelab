@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kumari-backend
+  labels:
+    app: kumari-backend
+    part-of: kumari-ai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: kumari-backend
+  template:
+    metadata:
+      labels:
+        app: kumari-backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: backend
+          image: kumari-backend  # Overridden by Kustomize images
+          ports:
+            - containerPort: 8000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: kumari-backend-config
+            - secretRef:
+                name: kumari-backend-secrets
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8000
+            failureThreshold: 30
+            periodSeconds: 2
+      imagePullSecrets:
+        - name: ghcr-pull-secret

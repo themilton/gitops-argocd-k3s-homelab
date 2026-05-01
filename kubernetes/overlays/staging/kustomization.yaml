@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: kumari-staging
+
+resources:
+  - namespace.yaml
+  - ingress.yaml
+  - secrets/sealed-secrets.yaml
+  - ../../base/kumari-backend
+  - ../../base/kumari-frontend
+  - ../../base/postgres
+  - ../../base/redis
+
+patches:
+  - path: patches/backend-resources.yaml
+  - path: patches/backend-env.yaml
+  - path: patches/frontend-env.yaml
+  - path: patches/postgres-storage.yaml
+  - path: patches/replica-count.yaml
+
+images:
+  - name: kumari-backend
+    newName: ghcr.io/themilton/kumari-backend
+    newTag: staging-a3f8c2d
+  - name: kumari-frontend
+    newName: ghcr.io/themilton/kumari-frontend
+    newTag: staging-a3f8c2d
